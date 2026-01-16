@@ -1,0 +1,3 @@
+[submodule "finance-agent-app"]
+	path = finance-agent-app
+	url = ../../Repository/finance-agent-app
