@@ -1,0 +1,505 @@
+openapi: 3.0.0
+info:
+  title: Backend API for AI Chat Application with A2A Architecture
+  description: API documentation for the backend infrastructure supporting AI Chat and Agent-to-Agent communication
+  version: 1.0.0
+  contact:
+    name: Finance Agent App Team
+    email: team@example.com
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.financeagentapp.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: System health checks
+  - name: Auth
+    description: Authentication endpoints
+  - name: Chat
+    description: Chat and AI interaction endpoints
+  - name: Portfolio
+    description: Portfolio management endpoints
+  - name: A2A
+    description: Agent-to-Agent communication endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check system health
+      description: Returns the health status of the system
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2023-01-01T00:00:00.000Z"
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "securePassword123"
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  email:
+                    type: string
+                    format: email
+                    example: "user@example.com"
+                  firstName:
+                    type: string
+                    example: "John"
+                  lastName:
+                    type: string
+                    example: "Doe"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /chat/send:
+    post:
+      tags:
+        - Chat
+      summary: Send a chat message
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "How can I analyze my investment portfolio?"
+                sessionId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440001"
+                  sessionId:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  response:
+                    type: string
+                    example: "I can help you analyze your investment portfolio. Please share details about your investments."
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /chat/stream:
+    get:
+      tags:
+        - Chat
+      summary: Stream AI responses via Server-Sent Events
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Event stream of AI responses
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  event:
+                    type: string
+                    example: "message"
+                  data:
+                    type: string
+                    example: "AI response chunk"
+
+  /portfolio:
+    get:
+      tags:
+        - Portfolio
+      summary: Get user's portfolio items
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portfolio retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PortfolioItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Portfolio
+      summary: Add or update a portfolio item
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePortfolioItemDto'
+      responses:
+        '201':
+          description: Portfolio item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /a2a/message:
+    post:
+      tags:
+        - A2A
+      summary: Send an A2A (Agent-to-Agent) message
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetAgentId
+                - action
+                - payload
+              properties:
+                targetAgentId:
+                  type: string
+                  example: "portfolio-analyzer-agent"
+                action:
+                  type: string
+                  example: "analyze_portfolio"
+                payload:
+                  type: object
+                  example:
+                    userId: "550e8400-e29b-41d4-a716-446655440000"
+                    portfolioIds: ["550e8400-e29b-41d4-a716-446655440001"]
+                correlationId:
+                  type: string
+                  format: uuid
+                  example: "550e8400-e29b-41d4-a716-446655440002"
+      responses:
+        '200':
+          description: A2A message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440003"
+                  status:
+                    type: string
+                    example: "sent"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00.000Z"
+    
+    PortfolioItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        userId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        assetType:
+          type: string
+          enum: [stock, fund, crypto, cash, bond, reit]
+          example: "stock"
+        symbol:
+          type: string
+          example: "AAPL"
+        name:
+          type: string
+          example: "Apple Inc."
+        quantity:
+          type: number
+          format: decimal
+          example: 10.5
+        costBasis:
+          type: number
+          format: decimal
+          example: 1500.75
+        currentValue:
+          type: number
+          format: decimal
+          example: 1800.50
+        currency:
+          type: string
+          example: "USD"
+        purchaseDate:
+          type: string
+          format: date
+          example: "2023-01-15"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00.000Z"
+    
+    CreatePortfolioItemDto:
+      type: object
+      required:
+        - assetType
+        - symbol
+        - name
+        - quantity
+        - costBasis
+        - currency
+      properties:
+        assetType:
+          type: string
+          enum: [stock, fund, crypto, cash, bond, reit]
+          example: "stock"
+        symbol:
+          type: string
+          example: "AAPL"
+        name:
+          type: string
+          example: "Apple Inc."
+        quantity:
+          type: number
+          format: decimal
+          example: 10.5
+        costBasis:
+          type: number
+          format: decimal
+          example: 1500.75
+        currentValue:
+          type: number
+          format: decimal
+          nullable: true
+          example: 1800.50
+        currency:
+          type: string
+          example: "USD"
+        purchaseDate:
+          type: string
+          format: date
+          example: "2023-01-15"
+  
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Bad Request"
+              message:
+                type: string
+                example: "Invalid input data"
+              statusCode:
+                type: number
+                example: 400
+    
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+              message:
+                type: string
+                example: "Access token expired"
+              statusCode:
+                type: number
+                example: 401
+    
+    Conflict:
+      description: Conflict - resource already exists
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Conflict"
+              message:
+                type: string
+                example: "User with this email already exists"
+              statusCode:
+                type: number
+                example: 409
