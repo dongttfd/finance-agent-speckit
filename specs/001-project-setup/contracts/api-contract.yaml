@@ -1,0 +1,619 @@
+openapi: 3.0.0
+info:
+  title: Finance Agent Application API
+  description: API specification for the finance agent application
+  version: 1.0.0
+  contact:
+    name: Finance Agent Team
+    email: team@example.com
+
+servers:
+  - url: https://api.finance-agent-app.com/v1
+    description: Production server
+  - url: https://staging-api.finance-agent-app.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the application
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+        '503':
+          description: Application is unhealthy
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate user and return access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accessToken
+                  - refreshToken
+                  - user
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT access token
+                  refreshToken:
+                    type: string
+                    description: JWT refresh token
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+        '422':
+          description: Validation error
+
+  /auth/register:
+    post:
+      summary: User registration
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '409':
+          description: Email already exists
+        '422':
+          description: Validation error
+
+  /users/profile:
+    get:
+      summary: Get user profile
+      description: Retrieve the authenticated user's profile information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update user profile
+      description: Update the authenticated user's profile information
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+
+  /agents:
+    get:
+      summary: List agents
+      description: Retrieve a list of available AI agents
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of agents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+                  totalCount:
+                    type: integer
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create agent
+      description: Create a new AI agent
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentInput'
+      responses:
+        '201':
+          description: Agent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+
+  /agents/{agentId}:
+    get:
+      summary: Get agent by ID
+      description: Retrieve a specific AI agent by its ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Agent not found
+    put:
+      summary: Update agent
+      description: Update an existing AI agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentInput'
+      responses:
+        '200':
+          description: Agent updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Agent not found
+        '422':
+          description: Validation error
+    delete:
+      summary: Delete agent
+      description: Delete an AI agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Agent deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Agent not found
+
+  /chat/conversations:
+    get:
+      summary: List conversations
+      description: Retrieve a list of chat conversations for the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+                  totalCount:
+                    type: integer
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create conversation
+      description: Start a new chat conversation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - agentId
+              properties:
+                agentId:
+                  type: string
+                  description: ID of the agent to chat with
+                title:
+                  type: string
+                  description: Optional title for the conversation
+      responses:
+        '201':
+          description: Conversation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+        '422':
+          description: Validation error
+
+  /chat/conversations/{conversationId}/messages:
+    get:
+      summary: Get conversation messages
+      description: Retrieve all messages in a conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Conversation not found
+    post:
+      summary: Send message
+      description: Send a new message in the conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: Message content
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Conversation not found
+        '422':
+          description: Validation error
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the user
+        email:
+          type: string
+          format: email
+          description: User's email address
+        firstName:
+          type: string
+          description: User's first name
+        lastName:
+          type: string
+          description: User's last name
+        phone:
+          type: string
+          description: User's phone number
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Agent:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - type
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the agent
+        name:
+          type: string
+          description: Name of the agent
+        description:
+          type: string
+          description: Description of the agent's purpose
+        type:
+          type: string
+          enum: [financial_advisor, portfolio_manager, risk_analyzer, compliance_checker]
+          description: Type of financial agent
+        isActive:
+          type: boolean
+          default: true
+          description: Whether the agent is active
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    AgentInput:
+      type: object
+      required:
+        - name
+        - description
+        - type
+      properties:
+        name:
+          type: string
+          description: Name of the agent
+        description:
+          type: string
+          description: Description of the agent's purpose
+        type:
+          type: string
+          enum: [financial_advisor, portfolio_manager, risk_analyzer, compliance_checker]
+          description: Type of financial agent
+        isActive:
+          type: boolean
+          default: true
+          description: Whether the agent is active
+
+    Conversation:
+      type: object
+      required:
+        - id
+        - userId
+        - agentId
+        - title
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the conversation
+        userId:
+          type: string
+          description: ID of the user who owns the conversation
+        agentId:
+          type: string
+          description: ID of the agent involved in the conversation
+        title:
+          type: string
+          description: Title of the conversation
+        status:
+          type: string
+          enum: [active, archived, pending]
+          default: active
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Message:
+      type: object
+      required:
+        - id
+        - conversationId
+        - senderId
+        - content
+        - role
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the message
+        conversationId:
+          type: string
+          description: ID of the conversation this message belongs to
+        senderId:
+          type: string
+          description: ID of the sender (user or agent)
+        content:
+          type: string
+          description: Content of the message
+        role:
+          type: string
+          enum: [user, agent]
+          description: Role of the message sender
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message was sent
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Users
+    description: User profile management
+  - name: Agents
+    description: AI agent management
+  - name: Chat
+    description: Conversation and messaging endpoints
