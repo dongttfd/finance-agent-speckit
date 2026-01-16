@@ -4,8 +4,8 @@
 
 ### 1. Cấu trúc thư mục
 
-* **Toàn bộ mã nguồn BẮT BUỘC phải nằm trong thư mục `finance-agent-app`.** và được quản lý trên 1 thư mục bằng git submodule
-* Mã nguồn frontend, backend và agent **PHẢI được tách rõ ràng** trong các thư mục con của `finance-agent-app`.
+* **Toàn bộ mã nguồn BẮT BUỘC phải nằm trong thư mục `finance-agent-app`.**
+* Mã nguồn frontend, backend, desktop và agent **PHẢI được tách rõ ràng** trong các thư mục con của `finance-agent-app`.
 
 ---
 
@@ -84,11 +84,11 @@
 * **Lưu trữ dữ liệu (MVP):**
 
   * In-memory hoặc database nhẹ (ví dụ: SQLite).
-* Backend **PHẢI** hỗ trợ:
+  * Backend **PHẢI** hỗ trợ:
 
   * Quản lý trạng thái hội thoại
   * Lưu snapshot danh mục tài chính người dùng
-* Lưu trữ lâu dài **KHÔNG BẮT BUỘC** trong giai đoạn MVP.
+  * Lưu trữ lâu dài **KHÔNG BẮT BUỘC** trong giai đoạn MVP.
 
 ---
 
@@ -96,7 +96,7 @@
 
 * **KHÔNG bắt buộc** viết unit test cho toàn bộ component frontend.
 * **TOÀN BỘ unit test hiện có PHẢI chạy pass** trước khi bắt đầu bất kỳ task mới nào.
-* Các service backend và logic Agent **NÊN** có khả năng test độc lập (sử dụng Jest – mặc định của NestJS).
+* Các service backend và logic Agent **Phải** có khả năng test độc lập (sử dụng Jest – mặc định của NestJS) và **phải** theo quy trình TDD
 
 ---
 
