@@ -1,0 +1,311 @@
+openapi: 3.0.0
+info:
+  title: Finance Agent App - Frontend Web API Contract
+  version: 1.0.0
+  description: API contract for frontend web interface interactions with backend services
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Check health of the backend service
+      responses:
+        '200':
+          description: Health check successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /auth/login:
+    post:
+      summary: Authenticate user and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "user123"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /chat/messages:
+    get:
+      summary: Get chat messages for a session
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of chat messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+    post:
+      summary: Send a new chat message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                content:
+                  type: string
+                sender:
+                  type: string
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+
+  /chat/start:
+    post:
+      summary: Start a new chat session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        '200':
+          description: Chat session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+
+  /portfolio:
+    get:
+      summary: Get user's portfolio items
+      responses:
+        '200':
+          description: List of portfolio items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioItem'
+    post:
+      summary: Add a new portfolio item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioItem'
+      responses:
+        '200':
+          description: Portfolio item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioItem'
+
+  /agents/status:
+    get:
+      summary: Get status of available agents
+      responses:
+        '200':
+          description: List of agent statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentStatus'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user-123"
+        username:
+          type: string
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        createdAt:
+          type: string
+          format: date-time
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    UserPreferences:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+          example: "light"
+        notificationsEnabled:
+          type: boolean
+          example: true
+        fontSize:
+          type: string
+          enum: [small, medium, large]
+          example: "medium"
+        enableTypingIndicator:
+          type: boolean
+          example: true
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "msg-123"
+        content:
+          type: string
+          example: "Hello, how can I help with your finances?"
+        sender:
+          type: string
+          enum: [user, agent, system]
+          example: "agent"
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [sending, sent, delivered, error]
+          example: "delivered"
+        metadata:
+          type: object
+          nullable: true
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "session-123"
+        userId:
+          type: string
+          example: "user-123"
+        title:
+          type: string
+          example: "Investment advice session"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+          example: true
+
+    PortfolioItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "item-123"
+        userId:
+          type: string
+          example: "user-123"
+        symbol:
+          type: string
+          example: "AAPL"
+        name:
+          type: string
+          example: "Apple Inc."
+        quantity:
+          type: number
+          example: 10
+        purchasePrice:
+          type: number
+          example: 150.00
+        currentPrice:
+          type: number
+          example: 175.50
+        value:
+          type: number
+          example: 1755.00
+        changePercent:
+          type: number
+          example: 17.00
+        assetType:
+          type: string
+          enum: [stock, bond, etf, mutual_fund, crypto, other]
+          example: "stock"
+
+    AgentStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "agent-123"
+        name:
+          type: string
+          example: "Financial Advisor Agent"
+        status:
+          type: string
+          enum: [idle, busy, offline]
+          example: "idle"
+        lastActive:
+          type: string
+          format: date-time
+        capabilities:
+          type: array
+          items:
+            type: string
+            example: "investment_analysis"
