@@ -1,0 +1,369 @@
+openapi: 3.0.0
+info:
+  title: Chat API for Finance Agent System
+  description: API for chat functionality with streaming responses and A2A integration
+  version: 1.0.0
+  contact:
+    name: Finance Agent Development Team
+    email: development@finance-agent.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.finance-agent.com/api
+    description: Production server
+
+tags:
+  - name: Chat
+    description: Chat operations and message handling
+  - name: Session
+    description: Chat session management
+  - name: Streaming
+    description: Server-Sent Events for streaming responses
+
+paths:
+  /chat/send:
+    post:
+      tags:
+        - Chat
+      summary: Send a chat message
+      description: Send a message to the AI assistant and receive a response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendMessageResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /chat/session:
+    post:
+      tags:
+        - Session
+      summary: Create a new chat session
+      description: Create a new chat session for a conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '200':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /chat/history/{sessionId}:
+    get:
+      tags:
+        - Chat
+      summary: Get chat history
+      description: Retrieve the history of messages for a specific session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The session ID
+      responses:
+        '200':
+          description: Chat history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetHistoryResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /chat/stream/{sessionId}:
+    get:
+      tags:
+        - Streaming
+      summary: Stream chat responses
+      description: Stream AI responses using Server-Sent Events
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: The session ID
+      responses:
+        '200':
+          description: Streaming response
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [chunk, complete, error]
+                  content:
+                    type: string
+                  finalMessageId:
+                    type: string
+                    format: uuid
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    SendMessageRequest:
+      type: object
+      required:
+        - sessionId
+        - message
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: The session ID
+        message:
+          type: string
+          maxLength: 10000
+          description: The message content
+        metadata:
+          type: object
+          description: Additional metadata for the message
+          nullable: true
+
+    SendMessageResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ChatMessage'
+        message:
+          type: string
+          example: "Message sent successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-18T08:22:06.607Z"
+
+    CreateSessionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Optional title for the session
+          nullable: true
+
+    CreateSessionResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ChatSession'
+        message:
+          type: string
+          example: "Session created successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-18T08:22:06.607Z"
+
+    GetHistoryResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        message:
+          type: string
+          example: "Chat history retrieved successfully"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-18T08:22:06.607Z"
+
+    ChatSession:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the chat session
+        userId:
+          type: string
+          format: uuid
+          description: Reference to the owning user
+        title:
+          type: string
+          description: Title for the chat session
+        status:
+          type: string
+          enum: [active, completed, archived]
+          description: Current status of the session
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the session was last updated
+        lastMessageAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last message in the session
+          nullable: true
+
+    ChatMessage:
+      type: object
+      required:
+        - id
+        - sessionId
+        - senderType
+        - content
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the message
+        sessionId:
+          type: string
+          format: uuid
+          description: Reference to the parent session
+        senderType:
+          type: string
+          enum: [user, agent]
+          description: Type of the sender
+        senderId:
+          type: string
+          description: ID of the sender (user ID or agent ID)
+          nullable: true
+        content:
+          type: string
+          description: Content of the message
+        metadata:
+          type: object
+          description: Additional metadata associated with the message
+          nullable: true
+        correlationId:
+          type: string
+          description: ID linking to related A2A messages
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was sent
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was last updated
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error description"
+        error:
+          type: object
+          description: Additional error details
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-18T08:22:06.607Z"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+security:
+  - bearerAuth: []
