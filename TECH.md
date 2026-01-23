@@ -74,7 +74,7 @@
 ### 4. Mô hình AI & Cấu hình
 
 * Nhà cung cấp AI **PHẢI** được cấu hình thông qua biến môi trường.
-* Hệ thống **PHẢI** hỗ trợ ít nhất một LLM bên ngoài (ví dụ: OpenAI hoặc Claude).
+* Hệ thống **PHẢI** hỗ trợ ít nhất một LLM bên ngoài (ví dụ: OpenAI, Qwen 3 hoặc Gemini).
 * Ứng dụng **TUYỆT ĐỐI KHÔNG** được đưa ra lời khuyên đầu tư; mọi phản hồi AI **chỉ mang tính phân tích và cung cấp thông tin**.
 
 ---

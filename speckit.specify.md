@@ -57,7 +57,7 @@ Dự án xây dựng một **AI Chat Application dựa trên kiến trúc Agent-
 
 ### Mô hình AI
 - Nhà cung cấp AI PHẢI được cấu hình thông qua biến môi trường
-- Hệ thống PHẢI hỗ trợ ít nhất một LLM bên ngoài (ví dụ: OpenAI hoặc Claude)
+- Hệ thống PHẢI hỗ trợ ít nhất một LLM bên ngoài (ví dụ: OpenAI, Qwen 3 hoặc Gemini)
 - Ứng dụng TUYỆT ĐỐI KHÔNG được đưa ra lời khuyên đầu tư
 
 ## Kiến trúc hệ thống
